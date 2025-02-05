@@ -12,7 +12,7 @@
 
 /* Begin PBXFileReference section */
 		B666AB002CAAD9DB00AF6523 /* Magic Hour.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Magic Hour.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B6D572112CB3374B0056A259 /* Calltime-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Calltime-Info.plist"; sourceTree = "<group>"; };
+		B6D572112CB3374B0056A259 /* MagicHour.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = MagicHour.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -38,7 +38,7 @@
 		B666AAF72CAAD9DB00AF6523 = {
 			isa = PBXGroup;
 			children = (
-				B6D572112CB3374B0056A259 /* Calltime-Info.plist */,
+				B6D572112CB3374B0056A259 /* MagicHour.plist */,
 				B666AB022CAAD9DB00AF6523 /* MagicHourApp */,
 				B666AB012CAAD9DB00AF6523 /* Products */,
 			);
@@ -267,7 +267,7 @@
 				DEVELOPMENT_TEAM = C3R7KAVB6V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Calltime-Info.plist";
+				INFOPLIST_FILE = MagicHour.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Magic Hour";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -299,7 +299,7 @@
 				DEVELOPMENT_TEAM = C3R7KAVB6V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Calltime-Info.plist";
+				INFOPLIST_FILE = MagicHour.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Magic Hour";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
