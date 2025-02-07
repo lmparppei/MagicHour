@@ -1,3 +1,5 @@
+![alt text](https://github.com/lmparppei/MagicHour/blob/main/MagicHourApp/Resources/Magic%20Hour%20256.png?raw=true)
+
 # Magic Hour
 
 Simple film and TV set call sheet organizer. Lets you add PDF callsheets for shooting days, along with daily scripts and full script for the whole project. As a production manager, you can set up your callsheets and script and then export a `.magicHour` package for the full team.
