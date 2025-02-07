@@ -31,3 +31,8 @@ func mediumDateFromISODate(_ str:String) -> String {
     }
     return ""
 }
+
+extension URL {
+    var typeIdentifier: String? { (try? resourceValues(forKeys: [.typeIdentifierKey]))?.typeIdentifier }
+    var localizedName: String? { (try? resourceValues(forKeys: [.localizedNameKey]))?.localizedName }
+}

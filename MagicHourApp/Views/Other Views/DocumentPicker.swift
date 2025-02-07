@@ -6,13 +6,15 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Document Picker for adding PDF files
 struct DocumentPicker: UIViewControllerRepresentable {
+    var types:[UTType] = [.pdf]
     var onPick: (URL) -> Void
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf])
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: self.types)
         picker.delegate = context.coordinator
         return picker
     }

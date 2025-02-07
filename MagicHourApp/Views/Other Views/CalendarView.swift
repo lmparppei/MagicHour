@@ -19,9 +19,10 @@ struct CalendarView: View {
     
     private let calendar = Calendar(identifier: .gregorian)
 
-    init(selectedDay: Binding<Date>, onSelection: @escaping (Date) -> Void = { _ in }) {
+    init(selectedDay: Binding<Date>, showSheetlist:Bool = false, onSelection: @escaping (Date) -> Void = { _ in }) {
         self._selectedDay = selectedDay
         self.onSelection = onSelection
+        self.showSheetlist = showSheetlist
         
         currentMonth = selectedDay.wrappedValue
     }

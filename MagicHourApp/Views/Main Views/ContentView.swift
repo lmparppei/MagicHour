@@ -42,6 +42,7 @@ struct ContentView: View {
     @State var viewMode:Mode = .callsheet
     
     @State private var showImport = false
+    @State private var showPackageImport = false
     @State private var importedURL:URL?
         
     var hasPDF:Bool {
@@ -61,7 +62,9 @@ struct ContentView: View {
                     if let callSheet = CallSheetManager.shared.callSheets[dayFormatter.string(from: selectedDay)], let pdf = callSheet.pdf {
                         PDFKitView(document: pdf)
                     } else {
+                        Spacer()
                         Text("No Call Sheet for Today").foregroundColor(.gray).padding()
+                        Spacer()
                     }
                 }
                 
@@ -69,7 +72,9 @@ struct ContentView: View {
                     if let callSheet = CallSheetManager.shared.callSheets[dayFormatter.string(from: selectedDay)], let pdf = callSheet.dailyScript {
                         PDFKitView(document: pdf)
                     } else {
+                        Spacer()
                         Text("No Daily Script for Today").foregroundColor(.gray).padding()
+                        Spacer()
                     }
                 }
                 
@@ -77,7 +82,9 @@ struct ContentView: View {
                     if let fullScript = CallSheetManager.shared.fullScript {
                         PDFKitView(document: fullScript)
                     } else {
+                        Spacer()
                         Text("No Full Script").foregroundColor(.gray).padding()
+                        Spacer()
                     }
                 }
             }
@@ -101,7 +108,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showCalendar) {
-                CalendarView(selectedDay: $selectedDay) { date in
+                CalendarView(selectedDay: $selectedDay, showSheetlist: true) { date in
                     selectedDay = date
                     showCalendar = false
                 }
@@ -180,7 +187,12 @@ struct ContentView: View {
         }
         .onOpenURL { url in
             importedURL = url
-            showImport = true
+            
+            if url.pathExtension == "magicHour" {
+                showPackageImport = true
+            } else {
+                showImport = true
+            }
         }
         .sheet(isPresented: $showImport) {
             ImportView(date: $selectedDay, url: $importedURL, onSelection: { date, type in
@@ -190,6 +202,26 @@ struct ContentView: View {
                 }
                 importedURL = nil
             })
+        }
+        
+        .alert("Importing Package", isPresented: $showPackageImport) {
+            Button("Append") {
+                print("Append")
+                if let url = importedURL {
+                    CallSheetManager.shared.importPackage(url: url, replace: false)
+                }
+            }
+            Button("Replace", role: .destructive) {
+                print("Replace")
+                if let url = importedURL {
+                    CallSheetManager.shared.importPackage(url: url, replace: true)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                print("Cacelled")
+            }
+        } message: {
+            Text("You are importing a package. Do you want to append or replace current project?")
         }
         
     }

@@ -7,6 +7,8 @@
 
 import Foundation
 import PDFKit
+import SwiftUI
+import UniformTypeIdentifiers
 
 public class CallSheetManager:ObservableObject {
     static let shared = CallSheetManager()
@@ -14,22 +16,39 @@ public class CallSheetManager:ObservableObject {
     @Published public var callSheets:[String: CallSheet] = [:]
     @Published public var fullScript:PDFDocument?
     
+    var projectName:String {
+        get {
+            return UserDefaults.standard.string(forKey: "projectName") ?? "Untitled"
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "projectName")
+        }
+    }
+    
     private init() {
         reload()
     }
     
     /// Packages the available call sheets
-    func package() -> Data? {
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        let destinationURL = documentDirectory.appendingPathComponent("Package.magicHour")
+    func package() -> URL? {
+        let name = self.projectName.sanitizedFileName()
+        guard let cachePath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first,
+              let docPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        else { return nil }
+        
+        let destinationURL = cachePath.appendingPathComponent(name + ".magicHour")
         
         do {
-            try FileManager.default.zipItem(at: documentDirectory, to: destinationURL)
+            if FileManager.default.fileExists(atPath: destinationURL.path()) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            
+            try FileManager.default.zipItem(at: docPath, to: destinationURL)
+            return destinationURL
         } catch {
-            print("Error loading saved call sheets: \(error.localizedDescription)")
+            print("Error saving saved call sheets: \(error.localizedDescription)")
+            return nil
         }
-        
-        return Data()
     }
     
     /// Reloads all stored call sheets
@@ -109,6 +128,23 @@ public class CallSheetManager:ObservableObject {
         CallSheetManager.shared.reload()
     }
     
+    /// Deletes ALL call sheets from storage and resets state
+    func deleteCallSheets() {
+        UserDefaults.standard.set(nil, forKey: "projectName")
+        
+        let fileManager = FileManager.default
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        
+        do {
+            let urls = try FileManager.default.contentsOfDirectory(at: documentDirectory, includingPropertiesForKeys: nil)
+            for url in urls where url.pathExtension == "pdf" {
+                try fileManager.removeItem(at: url)
+            }
+        } catch {
+            print("Error deleting call sheets: \(error.localizedDescription)")
+        }
+    }
+    
     /// Delete a file with given name inside app sandbox
     func deleteFile(_ fileName:String) {
         guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { print("No document folder found"); return }
@@ -142,5 +178,49 @@ public class CallSheetManager:ObservableObject {
         
         let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documentDirectory.appendingPathComponent(fileName)
+    }
+    
+    func importPackage(url:URL, replace:Bool) {
+        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        else { print("No document directory available"); return }
+        
+        let fm = FileManager.default
+        
+        if replace { deleteCallSheets() }
+        
+        do {
+            // Create a temporary directory for extraction
+            let tempDirectory = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try fm.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+            
+            // Unzip the file
+            try fm.unzipItem(at: url, to: tempDirectory)
+            
+            let tempDocsUrl = tempDirectory.appendingPathComponent("Documents")
+            let extractedUrls = try fm.contentsOfDirectory(at: tempDocsUrl, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            
+            for extractedUrl in extractedUrls {
+                // Skip anything that's not a PDF to avoid any nefarious things
+                if extractedUrl.pathExtension.lowercased() != "pdf" || extractedUrl.lastPathComponent.count == 0 { continue }
+                
+                let destination = documentDirectory.appending(component: extractedUrl.lastPathComponent)
+                print(extractedUrl.lastPathComponent)
+                
+                if fm.fileExists(atPath: destination.path) {
+                    try fm.removeItem(at: destination)
+                }
+                    
+                try fm.copyItem(at: extractedUrl, to: destination)
+            }
+            
+            // Update project name
+            var name = url.deletingPathExtension().lastPathComponent
+            if name.count == 0 { name = "Untitled" }
+            UserDefaults.standard.set(name, forKey: "projectKey")
+        } catch {
+            print("ERROR extracting:", error)
+        }
+        
+        reload()
     }
 }
