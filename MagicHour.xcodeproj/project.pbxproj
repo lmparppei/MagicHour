@@ -8,11 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		B6549F982CB47A4D00109FC8 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = B6549F972CB47A4D00109FC8 /* ZIPFoundation */; };
+		B6FA9E022D5680720094BFA4 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = B6FA9E012D5680720094BFA4 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		B666AB002CAAD9DB00AF6523 /* Magic Hour.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Magic Hour.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6D572112CB3374B0056A259 /* MagicHour.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = MagicHour.plist; sourceTree = "<group>"; };
+		B6FA9E012D5680720094BFA4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +41,7 @@
 			isa = PBXGroup;
 			children = (
 				B6D572112CB3374B0056A259 /* MagicHour.plist */,
+				B6FA9E012D5680720094BFA4 /* README.md */,
 				B666AB022CAAD9DB00AF6523 /* MagicHourApp */,
 				B666AB012CAAD9DB00AF6523 /* Products */,
 			);
@@ -120,6 +123,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6FA9E022D5680720094BFA4 /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
