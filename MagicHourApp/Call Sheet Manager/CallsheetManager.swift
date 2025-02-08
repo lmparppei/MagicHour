@@ -16,12 +16,16 @@ public class CallSheetManager:ObservableObject {
     @Published public var callSheets:[String: CallSheet] = [:]
     @Published public var fullScript:PDFDocument?
     
+    static let projectNameKey = "projectName"
+    static let projectFolder = "MagicHourProject"
+    var documentsURL = CallSheetManager.getDocumentsURL()
+    
     var projectName:String {
         get {
-            return UserDefaults.standard.string(forKey: "projectName") ?? "Untitled"
+            return UserDefaults.standard.string(forKey: CallSheetManager.projectNameKey) ?? "Untitled"
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: "projectName")
+            UserDefaults.standard.set(newValue, forKey: CallSheetManager.projectNameKey)
         }
     }
     
@@ -29,11 +33,32 @@ public class CallSheetManager:ObservableObject {
         reload()
     }
     
+    /// Returns and creates the document URL in sandbox, basically `sandbox/Documents/MagicHourProject`
+    class func getDocumentsURL() -> URL {
+        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(CallSheetManager.projectFolder, conformingTo: .directory)
+        else {
+            print("ERROR: No document folder found");
+            fatalError()
+        }
+        
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: documentsURL.path()) {
+            do {
+                try fm.createDirectory(at: documentsURL, withIntermediateDirectories: true)
+            } catch {
+                print("ERROR:", error)
+                fatalError()
+            }
+        }
+        
+        return documentsURL
+    }
+    
+    
     /// Packages the available call sheets
     func package() -> URL? {
         let name = self.projectName.sanitizedFileName()
-        guard let cachePath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first,
-              let docPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        guard let cachePath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         else { return nil }
         
         let destinationURL = cachePath.appendingPathComponent(name + ".magicHour")
@@ -43,7 +68,7 @@ public class CallSheetManager:ObservableObject {
                 try FileManager.default.removeItem(at: destinationURL)
             }
             
-            try FileManager.default.zipItem(at: docPath, to: destinationURL)
+            try FileManager.default.zipItem(at: documentsURL, to: destinationURL)
             return destinationURL
         } catch {
             print("Error saving saved call sheets: \(error.localizedDescription)")
@@ -53,13 +78,11 @@ public class CallSheetManager:ObservableObject {
     
     /// Reloads all stored call sheets
     func reload() {
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { print("Reload failed"); return }
-        
         callSheets = [:]
         fullScript = nil
 
         do {
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: documentDirectory, includingPropertiesForKeys: nil)
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
             
             for fileURL in fileURLs where fileURL.pathExtension == "pdf" {
                 guard let document = PDFDocument(url: fileURL) else { continue }
@@ -98,7 +121,6 @@ public class CallSheetManager:ObservableObject {
     
     /// Add or replace the file for current view mode
     func addOrReplaceFile(for day: Date, type:Mode, url: URL) {
-        print("TYPE:", type)
         guard url.startAccessingSecurityScopedResource(),
             let document = PDFDocument(url: url) else {
             print("Not a PDF document")
@@ -110,10 +132,9 @@ public class CallSheetManager:ObservableObject {
         }
         
         // Get the file URL in the document directory for the given day
-        let fileURL = getFileURL(for: day, prefix: prefix)
-        
-        // Save the PDF document as a file
-        if let data = document.dataRepresentation() {
+        // and save the PDF document as a file
+        if let fileURL = getFileURL(for: day, prefix: prefix),
+           let data = document.dataRepresentation() {
             do {
                 try data.write(to: fileURL, options: .atomic)
             } catch {
@@ -133,10 +154,9 @@ public class CallSheetManager:ObservableObject {
         UserDefaults.standard.set(nil, forKey: "projectName")
         
         let fileManager = FileManager.default
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         
         do {
-            let urls = try FileManager.default.contentsOfDirectory(at: documentDirectory, includingPropertiesForKeys: nil)
+            let urls = try FileManager.default.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
             for url in urls where url.pathExtension == "pdf" {
                 try fileManager.removeItem(at: url)
             }
@@ -147,9 +167,7 @@ public class CallSheetManager:ObservableObject {
     
     /// Delete a file with given name inside app sandbox
     func deleteFile(_ fileName:String) {
-        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { print("No document folder found"); return }
-        
-        let fileURL = documentsDirectory.appendingPathComponent(fileName)
+        let fileURL = documentsURL.appendingPathComponent(fileName)
         let fileManager = FileManager.default
         
         do {
@@ -165,7 +183,7 @@ public class CallSheetManager:ObservableObject {
     }
     
     /// This is a little silly, but we return a URL for given day and document type prefix. Full script doesn't have a date at all, but a fixed file name.
-    func getFileURL(for day: Date, prefix:String) -> URL {
+    func getFileURL(for day: Date, prefix:String) -> URL? {
         // Convert the date to the string and create callsheet name
         let dateString = dayFormatter.string(from: day)
         var fileName = ""
@@ -176,14 +194,10 @@ public class CallSheetManager:ObservableObject {
             fileName = prefix + ".pdf"
         }
         
-        let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentDirectory.appendingPathComponent(fileName)
+        return documentsURL.appendingPathComponent(fileName)
     }
     
     func importPackage(url:URL, replace:Bool) {
-        guard let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-        else { print("No document directory available"); return }
-        
         let fm = FileManager.default
         
         if replace { deleteCallSheets() }
@@ -196,14 +210,14 @@ public class CallSheetManager:ObservableObject {
             // Unzip the file
             try fm.unzipItem(at: url, to: tempDirectory)
             
-            let tempDocsUrl = tempDirectory.appendingPathComponent("Documents")
+            let tempDocsUrl = tempDirectory.appendingPathComponent(CallSheetManager.projectFolder)
             let extractedUrls = try fm.contentsOfDirectory(at: tempDocsUrl, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
             
             for extractedUrl in extractedUrls {
                 // Skip anything that's not a PDF to avoid any nefarious things
                 if extractedUrl.pathExtension.lowercased() != "pdf" || extractedUrl.lastPathComponent.count == 0 { continue }
                 
-                let destination = documentDirectory.appending(component: extractedUrl.lastPathComponent)
+                let destination = documentsURL.appending(component: extractedUrl.lastPathComponent)
                 print(extractedUrl.lastPathComponent)
                 
                 if fm.fileExists(atPath: destination.path) {
